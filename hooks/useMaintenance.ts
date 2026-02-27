@@ -3,7 +3,7 @@ import api from "@/lib/axios";
 
 export interface MaintenanceRecord {
   _id: string;
-  busId: { _id: string; busNumber: string; registrationNumber: string };
+  busId: { _id: string; number: string; model: string };
   type: "routine" | "repair" | "breakdown";
   status: "scheduled" | "in_progress" | "completed";
   description: string;
@@ -15,8 +15,8 @@ export interface MaintenanceRecord {
 
 export interface MaintenanceDueAlert {
   busId: string;
-  busNumber: string;
-  registrationNumber: string;
+  number: string;
+  model: string;
   isDueSoon: boolean;
   isOverdue: boolean;
   nextServiceDue: string;

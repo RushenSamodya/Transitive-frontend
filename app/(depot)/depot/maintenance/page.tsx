@@ -167,7 +167,7 @@ export default function DepotMaintenancePage() {
             <ul className="mt-1 space-y-1">
               {dueAlerts?.map((a, i) => (
                 <li key={i} className="text-yellow-800 text-sm">
-                  <span className="font-medium">{a.busNumber}</span> ({a.registrationNumber}) —{" "}
+                  <span className="font-medium">{a.number}</span> ({a.model}) —{" "}
                   {a.isOverdue
                     ? <span className="text-red-700 font-semibold">Overdue by {a.daysSinceDue} day(s)</span>
                     : <span>Due in {a.daysUntilDue} day(s)</span>
@@ -205,9 +205,9 @@ export default function DepotMaintenancePage() {
               : records?.map((r) => (
                   <TableRow key={r._id}>
                     <TableCell className="font-medium">
-                      {typeof r.busId === "object" ? r.busId.busNumber : r.busId}
+                      {typeof r.busId === "object" ? r.busId.number : r.busId}
                       {typeof r.busId === "object" && (
-                        <p className="text-xs text-gray-500">{r.busId.registrationNumber}</p>
+                        <p className="text-xs text-gray-500">{r.busId.model}</p>
                       )}
                     </TableCell>
                     <TableCell>
@@ -272,7 +272,7 @@ export default function DepotMaintenancePage() {
                 <SelectTrigger><SelectValue placeholder="Select bus" /></SelectTrigger>
                 <SelectContent>
                   {buses?.map((b) => (
-                    <SelectItem key={b._id} value={b._id}>{b.busNumber} — {b.registrationNumber}</SelectItem>
+                    <SelectItem key={b._id} value={b._id}>{b.number} — {b.model}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
