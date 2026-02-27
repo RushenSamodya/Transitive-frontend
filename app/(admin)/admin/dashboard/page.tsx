@@ -1,18 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import { useDepots } from "@/hooks/useDepots";
+import { useBuses } from "@/hooks/useBuses";
+import { useSchedules } from "@/hooks/useSchedules";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Bus, Calendar, AlertTriangle } from "lucide-react";
-
-interface AdminStats {
-  totalDepots: number;
-  totalBuses: number;
-  idleBuses: number;
-  activeSchedulesToday: number;
-}
 
 function StatCard({
   title,
@@ -47,13 +41,22 @@ function StatCard({
 }
 
 export default function AdminDashboardPage() {
-  const { data: stats, isLoading } = useQuery<AdminStats>({
-    queryKey: ["admin-stats"],
-    queryFn: async () => {
-      const { data } = await api.get("/dashboard/admin");
-      return data.data;
-    },
-  });
+  const { data: depots, isLoading: loadingDepots } = useDepots();
+  const { data: buses, isLoading: loadingBuses } = useBuses();
+  const { data: schedules, isLoading: loadingSchedules } = useSchedules();
+
+  const isLoading = loadingDepots || loadingBuses || loadingSchedules;
+
+  const totalDepots = depots?.length ?? 0;
+  const totalBuses = buses?.length ?? 0;
+  const idleBuses = buses?.filter((b) => b.status !== "active").length ?? 0;
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const activeSchedulesToday =
+    schedules?.filter((s) => {
+      const scheduleDate = s.date ? new Date(s.date).toISOString().split("T")[0] : null;
+      return scheduleDate === todayStr && (s.status === "scheduled" || s.status === "in_progress");
+    }).length ?? 0;
 
   return (
     <div>
@@ -64,28 +67,28 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Depots"
-          value={stats?.totalDepots}
+          value={totalDepots}
           icon={Building2}
           color="bg-indigo-500"
           loading={isLoading}
         />
         <StatCard
           title="Total Buses"
-          value={stats?.totalBuses}
+          value={totalBuses}
           icon={Bus}
           color="bg-blue-500"
           loading={isLoading}
         />
         <StatCard
-          title="Idle Buses Today"
-          value={stats?.idleBuses}
+          title="Inactive / In Maintenance"
+          value={idleBuses}
           icon={AlertTriangle}
           color="bg-yellow-500"
           loading={isLoading}
         />
         <StatCard
           title="Active Schedules Today"
-          value={stats?.activeSchedulesToday}
+          value={activeSchedulesToday}
           icon={Calendar}
           color="bg-green-500"
           loading={isLoading}
