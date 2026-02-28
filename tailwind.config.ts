@@ -55,7 +55,23 @@ const config: Config = {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+  		keyframes: {
+  			drive: {
+  				'0%':   { left: '-3rem', opacity: '0' },
+  				'6%':   { opacity: '1' },
+  				'94%':  { opacity: '1' },
+  				'100%': { left: 'calc(100% + 3rem)', opacity: '0' },
+  			},
+  			'stop-ping': {
+  				'0%, 100%': { transform: 'translate(-50%, -50%) scale(1)',   opacity: '0.4' },
+  				'50%':      { transform: 'translate(-50%, -50%) scale(1.35)', opacity: '1'   },
+  			},
+  		},
+  		animation: {
+  			'drive':     'drive 2.4s linear infinite',
+  			'stop-ping': 'stop-ping 2.4s ease-in-out infinite',
+  		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

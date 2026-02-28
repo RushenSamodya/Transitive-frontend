@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { StatCard } from "@/components/shared/StatCard";
+import { PageLoader } from "@/components/shared/PageLoader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Bus, Users, AlertTriangle, Wrench, Flag } from "lucide-react";
 import { format } from "date-fns";
@@ -42,34 +43,6 @@ interface DepotStats {
   }>;
 }
 
-function StatCard({ title, value, icon: Icon, color, sub, loading }: {
-  title: string;
-  value?: number | string;
-  icon: React.ElementType;
-  color: string;
-  sub?: string;
-  loading: boolean;
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
-        <div className={`p-2 rounded-lg ${color}`}>
-          <Icon className="h-4 w-4 text-white" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? <Skeleton className="h-8 w-16" /> : (
-          <>
-            <p className="text-3xl font-bold">{value ?? 0}</p>
-            {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function DepotDashboardPage() {
   const { data: stats, isLoading } = useQuery<DepotStats>({
     queryKey: ["depot-stats"],
@@ -81,6 +54,15 @@ export default function DepotDashboardPage() {
 
   const hasFlagged = (stats?.flaggedSchedules ?? 0) > 0;
   const hasMaintenanceAlerts = (stats?.maintenanceDueAlerts?.length ?? 0) > 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Depot Dashboard" description="Today's fleet overview for your depot" />
+        <PageLoader label="Fetching depot data…" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,10 +106,10 @@ export default function DepotDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <StatCard title="Idle Buses" value={stats?.idleBuses} icon={Bus} color="bg-yellow-500" loading={isLoading} />
-        <StatCard title="In Maintenance" value={stats?.busesInMaintenance} icon={Wrench} color="bg-blue-500" loading={isLoading} />
-        <StatCard title="Breakdown" value={stats?.busesInBreakdown} icon={AlertTriangle} color="bg-red-500" loading={isLoading} />
-        <StatCard title="Flagged Schedules" value={stats?.flaggedSchedules} icon={Flag} color="bg-orange-500" loading={isLoading} />
+        <StatCard title="Idle Buses" value={stats?.idleBuses} icon={Bus} color="bg-yellow-500" loading={isLoading} variant="plain" />
+        <StatCard title="In Maintenance" value={stats?.busesInMaintenance} icon={Wrench} color="bg-blue-500" loading={isLoading} variant="plain" />
+        <StatCard title="Breakdown" value={stats?.busesInBreakdown} icon={AlertTriangle} color="bg-red-500" loading={isLoading} variant="plain" />
+        <StatCard title="Flagged Schedules" value={stats?.flaggedSchedules} icon={Flag} color="bg-orange-500" loading={isLoading} variant="plain" />
         <StatCard
           title="Drivers"
           value={`${stats?.driversAvailable ?? 0} / ${(stats?.driversAvailable ?? 0) + (stats?.driversOnDuty ?? 0)}`}
@@ -135,6 +117,7 @@ export default function DepotDashboardPage() {
           color="bg-green-500"
           sub="Available / Total active"
           loading={isLoading}
+          variant="plain"
         />
         <StatCard
           title="Conductors"
@@ -143,11 +126,12 @@ export default function DepotDashboardPage() {
           color="bg-indigo-500"
           sub="Available / Total active"
           loading={isLoading}
+          variant="plain"
         />
       </div>
 
       {/* Today's Schedules */}
-      <Card>
+      <Card className="transition-shadow duration-200 hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Today&apos;s Schedules</CardTitle>
           <Link href="/depot/schedules">
@@ -155,11 +139,7 @@ export default function DepotDashboardPage() {
           </Link>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : !stats?.todaySchedules?.length ? (
+          {!stats?.todaySchedules?.length ? (
             <p className="text-sm text-gray-400 text-center py-4">No schedules for today</p>
           ) : (
             <div className="space-y-2">
