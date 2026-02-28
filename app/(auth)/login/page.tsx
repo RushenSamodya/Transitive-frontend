@@ -1,115 +1,95 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import api from "@/lib/axios";
-import { useAuthStore } from "@/store/authStore";
-import { AuthUser } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bus } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { LoginResult } from "@/services/authService";
+import { auth } from "@/lib/auth";
+import { BrandingPanel } from "./_components/BrandingPanel";
+import { LoginForm } from "./_components/LoginForm";
+import { RegisterForm } from "./_components/RegisterForm";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type Tab = "login" | "register";
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
-  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("login");
+  const [slideDir, setSlideDir] = useState<"left" | "right">("right");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
+  const switchTab = (t: Tab) => {
+    setSlideDir(t === "register" ? "right" : "left");
+    setTab(t);
+  };
 
-  const onSubmit = async (values: LoginFormData) => {
-    setError(null);
-    try {
-      const { data } = await api.post("/auth/login", values);
-      if (!data.success) {
-        setError(data.message ?? "Login failed");
-        return;
-      }
-      const { token, _id, name, email, role, depotId } = data.data;
-      const user: AuthUser = { id: _id, name, email, role, depotId };
-      login(token, user);
-      if (role === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/depot/dashboard");
-      }
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ?? "Invalid credentials. Please try again."
-      );
+  useEffect(() => {
+    const token = auth.getToken();
+    const user = auth.getUser();
+    if (token && user) {
+      router.replace(user.role === "admin" ? "/admin/dashboard" : "/depot/dashboard");
     }
+  }, [router]);
+
+  const handleLoginSuccess = ({ token, user }: LoginResult) => {
+    login(token, user);
+    router.push(user.role === "admin" ? "/admin/dashboard" : "/depot/dashboard");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center mb-2">
-            <div className="bg-blue-600 p-3 rounded-xl">
-              <Bus className="h-8 w-8 text-white" />
+    <div className="min-h-screen flex">
+      <BrandingPanel />
+
+      <div className="flex-1 flex items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-md">
+
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
+            <div className="bg-blue-600 p-2.5 rounded-xl">
+              <Bus className="h-6 w-6 text-white" />
             </div>
+            <span className="text-2xl font-bold text-slate-900">
+              Transit<span className="text-blue-600">Live</span>
+            </span>
           </div>
-          <CardTitle className="text-2xl font-bold">TransitLive</CardTitle>
-          <CardDescription>
-            SLTB Fleet Management System — Sign in to continue
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-md px-4 py-3 text-sm">
-                {error}
-              </div>
+
+          {/* Tab switcher */}
+          <div className="relative flex bg-slate-200 rounded-xl p-1 mb-8">
+            {/* sliding pill */}
+            <div
+              className="absolute top-1 bottom-1 left-1 bg-white rounded-lg shadow-sm transition-transform duration-300 ease-in-out"
+              style={{
+                width: "calc(50% - 4px)",
+                transform: tab === "register" ? "translateX(calc(100% + 4px))" : "translateX(0)",
+              }}
+            />
+            {(["login", "register"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => switchTab(t)}
+                className={`relative flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-300 ${
+                  tab === t ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {t === "login" ? "Sign In" : "Create Account"}
+              </button>
+            ))}
+          </div>
+
+          <div
+            key={tab}
+            className={`animate-in fade-in-0 duration-300 ${
+              slideDir === "right" ? "slide-in-from-right-4" : "slide-in-from-left-4"
+            }`}
+          >
+            {tab === "login" ? (
+              <LoginForm onSuccess={handleLoginSuccess} onSwitchTab={() => switchTab("register")} />
+            ) : (
+              <RegisterForm onSuccess={handleLoginSuccess} onSwitchTab={() => switchTab("login")} />
             )}
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@sltb.lk"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-600">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-xs text-red-600">{errors.password.message}</p>
-              )}
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

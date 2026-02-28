@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   Bus,
   LayoutDashboard,
@@ -48,6 +50,7 @@ export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const navItems = role === "admin" ? adminNav : depotNav;
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   return (
     <aside className="flex flex-col w-64 min-h-screen bg-slate-900 text-white">
@@ -97,12 +100,22 @@ export function Sidebar({ role }: SidebarProps) {
           variant="ghost"
           size="sm"
           className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800"
-          onClick={logout}
+          onClick={() => setShowSignOutDialog(true)}
         >
           <LogOut className="h-4 w-4 mr-2" />
           Sign Out
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={showSignOutDialog}
+        onOpenChange={setShowSignOutDialog}
+        title="Sign Out"
+        description="Are you sure you want to sign out?"
+        onConfirm={logout}
+        confirmLabel="Sign Out"
+        variant="destructive"
+      />
     </aside>
   );
 }
